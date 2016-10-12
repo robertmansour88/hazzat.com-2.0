@@ -33,7 +33,12 @@ namespace Hazzat.Views
 
         protected void OnToolbarItemClicked(object sender, EventArgs args)
         {
-            ToolbarItem toolbarItem = (ToolbarItem)sender; DisplayAlert("Yo!", "ToolbarItem '" + toolbarItem.Text + "' clicked", "okay");
+            ToolbarItem toolbarItem = (ToolbarItem)sender;
+
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                Navigation.PushModalAsync(new Settings());
+            });
         }
     }
 }

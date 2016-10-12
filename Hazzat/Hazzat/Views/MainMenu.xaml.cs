@@ -46,9 +46,12 @@ namespace Hazzat
 
         protected void SeasonSelected(object sender, ItemTappedEventArgs e)
         {
-            SeasonInfo item = (SeasonInfo)e.Item;
-            MessagingCenter.Send(this, "SeasonSelected");
-            MasterDetailMenu.Menu.SectionMenuInit(item.Name, item.ItemId);
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                SeasonInfo item = (SeasonInfo)e.Item;
+                MessagingCenter.Send(this, "SeasonSelected");
+                MasterDetailMenu.Menu.SectionMenuInit(item.Name, item.ItemId);
+            });
         }
     }
 }
