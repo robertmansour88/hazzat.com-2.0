@@ -98,18 +98,19 @@ namespace Hazzat
 
         private Action BuildDataCache()
         {
-            return delegate {
+            return delegate
+            {
                 isDataCacheBuilding = true;
 
                 Dictionary<string, Dictionary<string, List<string>>> tempcache = new Dictionary<string, Dictionary<string, List<string>>>();
 
-
+                
             };
         }
 
         protected override void OnSleep()
         {
-           Properties["AppDataCache"] = Serialize(AppDataCache);
+            Properties["AppDataCache"] = Serialize(AppDataCache);
         }
 
         protected override void OnResume()

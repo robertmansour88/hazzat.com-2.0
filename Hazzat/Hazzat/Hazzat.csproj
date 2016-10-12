@@ -38,6 +38,7 @@
     <Compile Include="Abstract\ColorRender.cs" />
     <Compile Include="Abstract\WebAssets.cs" />
     <Compile Include="App.cs" />
+    <Compile Include="HazzatService\DataCacheLoader.cs" />
     <Compile Include="HazzatService\HazzatService.cs" />
     <Compile Include="HazzatService\HazzatServiceExtensions.cs" />
     <Compile Include="HazzatService\HazzatWebService.cs" />

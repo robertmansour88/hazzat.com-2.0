@@ -2743,3 +2743,6 @@ public partial class HazzatWebServiceSoapClient : System.ServiceModel.ClientBase
         }
     }
 }
+
+    }
+}
