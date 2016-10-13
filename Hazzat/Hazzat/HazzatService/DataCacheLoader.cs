@@ -52,6 +52,7 @@ namespace HazzatService
         /// A collection of hazzat.com objects
         /// </summary>
         public SeasonInfo[] Seasons { get; private set; }
+        public SeasonInfo[] Special { get; private set; }
         public HymnStructNameViewModel[] Hymns { get; private set; }
         public StructureInfo[] HymnsBySeason { get; private set; }
         public ServiceHymnInfo[] HazzatHymns { get; private set; }
@@ -78,6 +79,7 @@ namespace HazzatService
 
             if (isOtherLoaded)
             {
+                Special = e.Result
                 lock (tempCache)
                 {
                     foreach (var season in Seasons)
@@ -85,10 +87,16 @@ namespace HazzatService
                         tempCache.Add(season.Name, null);
                         createViewModelBySeason(season.ItemId);
                     }
+                    foreach(var sepc in Special)
+                    {
+                        tempCache.Add(sepc.Name, null);
+                        createViewModelBySeason(sepc.ItemId);
+                    }
                 }
             }
             else {
                 isOtherLoaded = true;
+                Seasons = e.Result;
             }
         }
 
