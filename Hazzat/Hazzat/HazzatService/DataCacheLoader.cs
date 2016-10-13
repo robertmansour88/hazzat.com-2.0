@@ -17,6 +17,8 @@ namespace HazzatService
         private const int HazzatServiceMaxBufferPoolSize = 2147483647;
         private const int HazzatServiceMaxBufferSize = 2147483647;
 
+        public bool isOtherLoaded = false;
+
         private Dictionary<string, Dictionary<string, Dictionary<KeyValuePair<int, string>, Dictionary<string, string>>>> tempCache;
 
 
@@ -25,6 +27,7 @@ namespace HazzatService
             tempCache = new Dictionary<string, Dictionary<string, Dictionary<KeyValuePair<int, string>, Dictionary<string, string>>>>();
 
             createSeasonsViewModel(true);
+            createSeasonsViewModel(false);
         }
 
         public Dictionary<string, Dictionary<string, Dictionary<KeyValuePair<int, string>, Dictionary<string, string>>>> GetCache()
@@ -73,13 +76,19 @@ namespace HazzatService
         public void client_GetCompleted(object sender, GetSeasonsCompletedEventArgs e)
         {
 
-            lock (tempCache)
+            if (isOtherLoaded)
             {
-                foreach (var season in Seasons)
+                lock (tempCache)
                 {
-                    tempCache.Add(season.Name, null);
-                    createViewModelBySeason(season.ItemId);
+                    foreach (var season in Seasons)
+                    {
+                        tempCache.Add(season.Name, null);
+                        createViewModelBySeason(season.ItemId);
+                    }
                 }
+            }
+            else {
+                isOtherLoaded = true;
             }
         }
 
@@ -112,7 +121,7 @@ namespace HazzatService
                             if (keyValue.Key == Struct.Season_Name)
                             {
                                 keyValue.Value.Add(Struct.Name, null);
-                                GetServiceHymns(Struct.ItemId);
+                                GetServiceHymns(Struct.ItemId); 
                             }
                         }
                     }
