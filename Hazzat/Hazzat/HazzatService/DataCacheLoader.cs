@@ -17,12 +17,19 @@ namespace HazzatService
         private const int HazzatServiceMaxBufferPoolSize = 2147483647;
         private const int HazzatServiceMaxBufferSize = 2147483647;
 
-        public async Task<Dictionary<string, Dictionary<string, List<string>>>> DataCacheLoader_Load()
+        private Dictionary<string, Dictionary<string, Dictionary<KeyValuePair<int, string>, Dictionary<string, string>>>> tempCache;
+
+
+        public void DataCacheLoader_Load()
         {
-            
+            tempCache = new Dictionary<string, Dictionary<string, Dictionary<KeyValuePair<int, string>, Dictionary<string, string>>>>();
 
+            createSeasonsViewModel(true);
+        }
 
-            return null;
+        public Dictionary<string, Dictionary<string, Dictionary<KeyValuePair<int, string>, Dictionary<string, string>>>> GetCache()
+        {
+            return tempCache;
         }
 
         private BasicHttpBinding HazzatServiceBinding
@@ -49,8 +56,6 @@ namespace HazzatService
         public ServiceHymnsContentInfo[] HazzatHymnContentInfo { get; private set; }
         public ServiceHymnsContentInfo[] VerticalHazzatHymnContent { get; private set; }
 
-
-
         public void createSeasonsViewModel(bool isDateSpecific)
         {
             try
@@ -67,7 +72,15 @@ namespace HazzatService
 
         public void client_GetCompleted(object sender, GetSeasonsCompletedEventArgs e)
         {
-            Seasons = e.Result;
+
+            lock (tempCache)
+            {
+                foreach (var season in Seasons)
+                {
+                    tempCache.Add(season.Name, null);
+                    createViewModelBySeason(season.ItemId);
+                }
+            }
         }
 
         public void createViewModelBySeason(int Season)
@@ -75,7 +88,7 @@ namespace HazzatService
             try
             {
                 HazzatWebServiceSoapClient client = new HazzatWebServiceSoapClient(HazzatServiceBinding, new EndpointAddress(HazzatServiceEndpoint));
-                client.GetSeasonServicesCompleted += new EventHandler<GetSeasonServicesCompletedEventArgs>(GetCompletedStructBySeason);
+                client.GetSeasonServicesCompleted += new EventHandler<GetSeasonServicesCompletedEventArgs>(GetCompletedStructsBySeason);
                 client.GetSeasonServicesAsync(Season);
             }
 
@@ -85,12 +98,29 @@ namespace HazzatService
             }
         }
 
-        public void GetCompletedStructBySeason(object sender, GetSeasonServicesCompletedEventArgs e)
+        public void GetCompletedStructsBySeason(object sender, GetSeasonServicesCompletedEventArgs e)
         {
             HymnsBySeason = e.Result;
+            lock (tempCache)
+            {
+                lock (HymnsBySeason)
+                {
+                    foreach (var Struct in HymnsBySeason)
+                    {
+                        foreach (var keyValue in tempCache)
+                        {
+                            if (keyValue.Key == Struct.Season_Name)
+                            {
+                                keyValue.Value.Add(Struct.Name, null);
+                                GetServiceHymns(Struct.ItemId);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        public void FetchServiceHymns(int StructId, Action<object, GetSeasonServiceHymnsCompletedEventArgs> GetCompletedHymnsBySeason)
+        public void GetServiceHymns(int StructId)
         {
             try
             {
@@ -108,9 +138,29 @@ namespace HazzatService
         public void GetCompletedHymnsBySeason(object sender, GetSeasonServiceHymnsCompletedEventArgs e)
         {
             HazzatHymns = e.Result;
+            lock (tempCache)
+            {
+                lock (HazzatHymns)
+                {
+                    foreach (var Hymn in HazzatHymns)
+                    {
+                        foreach (var keyValue in tempCache.Values)
+                        {
+                            foreach (var keyValue2 in keyValue)
+                            {
+                                if (keyValue2.Key == Hymn.Structure_Name)
+                                {
+                                    keyValue2.Value.Add(new KeyValuePair<int, string>(Hymn.ItemId, Hymn.Title), null);
+                                    CreateHymnTextViewModel(Hymn.ItemId);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        public void CreateHymnTextViewModel(int itemId, Action<object, GetSeasonServiceHymnTextCompletedEventArgs> client_GetCompletedHymnInfo)
+        public void CreateHymnTextViewModel(int itemId)
         {
             try
             {
@@ -133,16 +183,91 @@ namespace HazzatService
         public void client_GetCompletedHymnInfo(object sender, GetSeasonServiceHymnTextCompletedEventArgs e)
         {
             HymnContentInfo = e.Result;
+
+            lock (tempCache)
+            {
+                lock (HymnContentInfo)
+                {
+                    foreach (var Hymn in HymnContentInfo)
+                    {
+                        foreach (var keyValue in tempCache.Values)
+                        {
+                            foreach (var keyValue2 in keyValue)
+                            {
+                                foreach (var keyvalue3 in keyValue2.Value)
+                                {
+                                    if (keyvalue3.Key.Equals(new KeyValuePair<int, string>(Hymn.ItemId, Hymn.Title)))
+                                    {
+                                        keyvalue3.Value.Add("CopticText", Hymn.Content_Coptic);
+                                        keyvalue3.Value.Add("EnglishText", Hymn.Content_English);
+                                        keyvalue3.Value.Add("ArabicText", Hymn.Content_Arabic);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         public void client_GetCompletedHymnHazzat(object sender, GetSeasonServiceHymnHazzatCompletedEventArgs e)
         {
             HazzatHymnContentInfo = e.Result;
+
+            lock (tempCache)
+            {
+                lock (HazzatHymnContentInfo)
+                {
+                    foreach (var Hymn in HazzatHymnContentInfo)
+                    {
+                        foreach (var keyValue in tempCache.Values)
+                        {
+                            foreach (var keyValue2 in keyValue)
+                            {
+                                foreach (var keyvalue3 in keyValue2.Value)
+                                {
+                                    if (keyvalue3.Key.Equals(new KeyValuePair<int, string>(Hymn.ItemId, Hymn.Title)))
+                                    {
+                                        keyvalue3.Value.Add("CopticHazzat", Hymn.Content_Coptic);
+                                        keyvalue3.Value.Add("EnglishHazzat", Hymn.Content_English);
+                                        keyvalue3.Value.Add("ArabicHazzat", Hymn.Content_Arabic);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private void client_GetCompletedHymnVerticalHazzat(object sender, GetSeasonServiceHymnVerticalHazzatCompletedEventArgs e)
         {
             VerticalHazzatHymnContent = e.Result;
+
+            lock (tempCache)
+            {
+                lock (VerticalHazzatHymnContent)
+                {
+                    foreach (var Hymn in VerticalHazzatHymnContent)
+                    {
+                        foreach (var keyValue in tempCache.Values)
+                        {
+                            foreach (var keyValue2 in keyValue)
+                            {
+                                foreach (var keyvalue3 in keyValue2.Value)
+                                {
+                                    if (keyvalue3.Key.Equals(new KeyValuePair<int, string>(Hymn.ItemId, Hymn.Title)))
+                                    {
+                                        keyvalue3.Value.Add("CopticVerticalHazzat", Hymn.Content_Coptic);
+                                        keyvalue3.Value.Add("EnglishVerticalHazzat", Hymn.Content_English);
+                                        keyvalue3.Value.Add("ArabicVerticalHazzat", Hymn.Content_Arabic);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
