@@ -79,7 +79,7 @@ namespace HazzatService
 
             if (isOtherLoaded)
             {
-                Special = e.Result
+                Special = e.Result;
                 lock (tempCache)
                 {
                     foreach (var season in Seasons)
